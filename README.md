@@ -3,7 +3,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
-  <title>NiceMind-ish (HTML/SVG) - Templates + Notes + Share</title>
+  <title>NiceMind-ish (HTML/SVG) — آنلاین (Room) + استایل درختی/تگ + Drag آسان</title>
+
   <style>
     :root{
       --bg:#f6f7fb;
@@ -63,6 +64,7 @@
       color:white;
       border-color: rgba(255,255,255,.2);
     }
+    .btn:disabled, .iconbtn:disabled{ opacity:.55; cursor:not-allowed; transform:none !important; box-shadow:none !important; }
 
     .iconbtn{
       width:42px; height:40px;
@@ -102,6 +104,9 @@
       font-size:12px;
       user-select:none;
       white-space:nowrap;
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
     }
     .pill.warn{
       background: rgba(209,74,74,.10);
@@ -127,7 +132,7 @@
       position:fixed;
       top:0; right:0;
       height:100%;
-      width:min(420px, calc(100vw - 44px));
+      width:min(460px, calc(100vw - 44px));
       background: rgba(255,255,255,.96);
       border-left:1px solid rgba(16,24,40,.10);
       box-shadow: var(--shadow2);
@@ -186,7 +191,7 @@
       position:fixed;
       top:64px;
       right:12px;
-      width:min(720px, calc(100vw - 24px));
+      width:min(820px, calc(100vw - 24px));
       background: rgba(255,255,255,.95);
       backdrop-filter: blur(10px);
       border:1px solid rgba(16,24,40,.10);
@@ -227,7 +232,7 @@
       top:50%;
       left:50%;
       transform: translate(-50%,-50%);
-      width:min(640px, calc(100vw - 24px));
+      width:min(720px, calc(100vw - 24px));
       background: rgba(255,255,255,.96);
       border:1px solid rgba(16,24,40,.10);
       border-radius: 18px;
@@ -235,6 +240,8 @@
       padding:14px;
       display:none;
       z-index:150;
+      max-height: 88vh;
+      overflow: hidden;
     }
     .modal.open{ display:block; }
     .modal h3{
@@ -269,11 +276,25 @@
       box-shadow: 0 0 0 4px rgba(14,155,137,.10);
     }
 
-    /* Color palette */
-    .palette{
-      display:flex; gap:8px; flex-wrap:wrap;
-      margin-top:6px;
+    /* Style modal: flex column + scroll + sticky actions (مهم: پالت‌ها دیده شوند) */
+    #styleModal.open{ display:flex; flex-direction:column; }
+    .modal-scroll{
+      flex: 1 1 auto;
+      overflow:auto;
+      -webkit-overflow-scrolling: touch;
+      padding-bottom: 12px;
     }
+    .modal-actions{
+      position: sticky;
+      bottom: 0;
+      background: rgba(255,255,255,.96);
+      border-top: 1px solid rgba(16,24,40,.10);
+      padding: 10px 0 calc(10px + env(safe-area-inset-bottom));
+      margin-top: 8px;
+    }
+
+    /* Color palette */
+    .palette{ display:flex; gap:8px; flex-wrap:wrap; margin-top:6px; }
     .swatch{
       width:28px; height:28px; border-radius:10px;
       border:1px solid rgba(16,24,40,.14);
@@ -356,7 +377,7 @@
     .node{
       position:absolute;
       width: var(--nodeW);
-      min-height: 94px;
+      min-height: 98px;
       border-radius: var(--radius);
       background: var(--panel);
       box-shadow: var(--shadow);
@@ -364,7 +385,6 @@
       overflow:hidden;
       user-select:none;
       transform: translateZ(0);
-      cursor: grab;
       opacity:1;
     }
     .node.selected{
@@ -379,7 +399,6 @@
     .node.dragging{
       opacity: .96;
       box-shadow: 0 14px 34px rgba(16,24,40,.18);
-      cursor: grabbing;
     }
 
     .node .hdr{
@@ -389,13 +408,35 @@
       padding:10px 12px;
       background: linear-gradient(180deg, rgba(14,155,137,.12), rgba(14,155,137,.06));
       border-bottom:1px solid rgba(16,24,40,.06);
+      cursor: grab;
     }
+    .node.dragging .hdr{ cursor: grabbing; }
+
+    /* ✅ Easy Drag Handle */
+    .drag-handle{
+      width: 38px;
+      height: 34px;
+      border-radius: 12px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255,255,255,.85);
+      border: 1px solid rgba(16,24,40,.12);
+      box-shadow: 0 8px 16px rgba(16,24,40,.08);
+      user-select:none;
+      cursor: grab;
+      touch-action:none;
+      flex: 0 0 auto;
+    }
+    .node.dragging .drag-handle{ cursor: grabbing; }
+
     .node .checkbox{
       width:18px; height:18px;
       accent-color: var(--primary);
       cursor:pointer;
       flex:0 0 auto;
     }
+
     .node .title{
       flex:1;
       font-weight:900;
@@ -409,6 +450,7 @@
       background: rgba(255,255,255,.65);
       border:1px solid transparent;
       text-rendering: geometricPrecision;
+      min-width: 0;
     }
     .node .title:focus{
       border-color: rgba(14,155,137,.45);
@@ -461,20 +503,17 @@
       color: rgba(46,96,160,.95);
       border-color: rgba(46,96,160,.18);
     }
+    .badge.tag{
+      background: rgba(124,58,237,.10);
+      color: rgba(124,58,237,.95);
+      border-color: rgba(124,58,237,.18);
+    }
 
     /* Templates */
-    .node.tpl-card{ }
-    .node.tpl-cluster{
-      border-radius: 999px;
-    }
-    .node.tpl-cluster .hdr{
-      border-bottom:0;
-      background: rgba(16,24,40,.03);
-    }
-    .node.tpl-cluster .title{
-      text-align:center;
-      border-radius: 999px;
-    }
+    .node.tpl-card{}
+    .node.tpl-cluster{ border-radius: 999px; }
+    .node.tpl-cluster .hdr{ border-bottom:0; background: rgba(16,24,40,.03); cursor: grab; }
+    .node.tpl-cluster .title{ text-align:center; border-radius: 999px; }
 
     .node.tpl-sticky{
       border-radius: 18px;
@@ -485,6 +524,7 @@
     .node.tpl-sticky .hdr{
       background: rgba(234,179,8,.16);
       border-bottom:1px dashed rgba(16,24,40,.12);
+      cursor: grab;
     }
 
     .node.tpl-outline{
@@ -493,25 +533,19 @@
       border:2px dashed rgba(16,24,40,.18);
       box-shadow: 0 10px 22px rgba(16,24,40,.08);
     }
-    .node.tpl-outline .hdr{
-      background: rgba(255,255,255,.55);
-    }
+    .node.tpl-outline .hdr{ background: rgba(255,255,255,.55); cursor: grab; }
 
     .node.tpl-minimal{
       box-shadow: 0 8px 18px rgba(16,24,40,.08);
       border-color: rgba(16,24,40,.08);
     }
-    .node.tpl-minimal .hdr{
-      padding:8px 10px;
-    }
-    .node.tpl-minimal .meta{
-      padding:8px 10px 10px;
-    }
+    .node.tpl-minimal .hdr{ padding:8px 10px; }
+    .node.tpl-minimal .meta{ padding:8px 10px 10px; }
 
     /* Context menu */
     .ctx{
       position:absolute;
-      min-width: 280px;
+      min-width: 290px;
       background: white;
       border:1px solid rgba(16,24,40,.10);
       border-radius: 14px;
@@ -549,6 +583,10 @@
       .spacer{ display:none; }
     }
   </style>
+
+  <!-- ✅ برای آنلاین (اختیاری): Firebase compat (اگر تنظیمات را پر کنی فعال می‌شود) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 </head>
 
 <body>
@@ -571,6 +609,8 @@
     <div class="spacer"></div>
 
     <div class="group">
+      <span class="pill" id="onlinePill" title="وضعیت آنلاین">● آفلاین</span>
+
       <span class="pill warn" id="viewOnlyPill" style="display:none;"></span>
       <button class="btn" id="btnTakeCopy" style="display:none;">✍️ ساخت نسخه خودم</button>
 
@@ -583,7 +623,7 @@
   <div class="drawer-backdrop" id="drawerBackdrop"></div>
   <div class="drawer" id="drawer">
     <div class="drawer-hdr">
-      <div class="title">بخش‌ها</div>
+      <div class="title">بخش‌ها / همکاری</div>
       <button class="iconbtn" id="btnCloseDrawer" title="بستن">✕</button>
     </div>
     <div class="drawer-body">
@@ -593,21 +633,35 @@
       </div>
 
       <div class="drawer-section">
-        <div class="h">اشتراک با دیگران</div>
+        <div class="h">✅ همکاری آنلاین (Room)</div>
         <div class="small">
-          این بخش لینک اشتراک می‌سازد (کل دیتا داخل URL ذخیره می‌شود). دیگران با باز کردن لینک، نقشه را می‌بینند.
-          (به صورت پیش‌فرض: نمایش فقط)
+          اگر Firebase را تنظیم کنی، هر تغییری که تو انجام بدی برای همه کسانی که همین Room را باز کرده‌اند، آنلاین اعمال می‌شود و آن‌ها هم می‌توانند تغییر بدهند.
+        </div>
+        <div class="row" style="margin-top:10px;">
+          <div class="field" style="flex:1 1 260px;">
+            <label>Room ID (مثلاً: team-2026)</label>
+            <input class="input" id="roomInput" placeholder="مثلاً: my-team-room" />
+          </div>
+          <div class="field" style="flex:0 0 auto;">
+            <label>&nbsp;</label>
+            <button class="btn primary" id="btnJoinRoom">ورود / ساخت Room</button>
+          </div>
+        </div>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+          <button class="btn" id="btnCopyRoomLink">🔗 کپی لینک Room</button>
+          <button class="btn" id="btnLeaveRoom">⛔ خروج از Room</button>
+        </div>
+        <div class="small" id="roomHint" style="margin-top:8px;"></div>
+      </div>
+
+      <div class="drawer-section">
+        <div class="h">اشتراک با دیگران (لینک داخل URL)</div>
+        <div class="small">
+          این گزینه دیتا را داخل URL می‌گذارد. برای ارسال سریع و «نمایش فقط» عالی است.
         </div>
         <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:10px;">
           <button class="btn primary" id="btnShareActive">🔗 لینک اشتراک (همین بخش)</button>
           <button class="btn" id="btnShareAll">🔗 لینک اشتراک (هر دو بخش)</button>
-        </div>
-      </div>
-
-      <div class="drawer-section">
-        <div class="h">ذخیره و بکاپ</div>
-        <div class="small">
-          همه چیز خودکار ذخیره می‌شود. علاوه بر آن هر چند ثانیه یک بکاپ امن هم ثبت می‌کنیم تا هیچ داده‌ای از دست نرود.
         </div>
       </div>
 
@@ -617,6 +671,13 @@
           <button class="btn" id="btnExportAll">⬇️ خروجی همه بخش‌ها</button>
           <button class="btn" id="btnImportAll">⬆️ ورود همه بخش‌ها</button>
           <input type="file" id="fileImportAll" accept="application/json" hidden />
+        </div>
+      </div>
+
+      <div class="drawer-section">
+        <div class="h">نکته</div>
+        <div class="small">
+          ✅ جابجایی باکس‌ها خیلی راحت‌تر شده: روی دسته‌ی ⠿ بگیر و بکش. (موبایل هم عالی)
         </div>
       </div>
     </div>
@@ -639,6 +700,8 @@
       <button class="btn" id="btnToggleNetwork">🧠 مد شبکه: خاموش</button>
       <button class="btn primary" id="btnCreateLink">➕ ایجاد ارتباط</button>
       <button class="btn" id="btnManageLinks">📎 مدیریت ارتباطات</button>
+
+      <button class="btn" id="btnTagStyles">🏷 مدیریت استایل تگ‌ها</button>
 
       <button class="btn" id="btnTrash">🧺 سطل زباله</button>
 
@@ -684,67 +747,110 @@
     </div>
   </div>
 
-  <!-- Style Modal (colors + template + font + note) -->
+  <!-- Tag styles modal -->
+  <div class="modal" id="tagStylesModal" role="dialog" aria-modal="true">
+    <h3>مدیریت استایل تگ‌ها</h3>
+    <div class="small" style="margin-bottom:6px;">
+      هر تگ می‌تواند یک استایل داشته باشد و هر نودی که آن تگ را داشته باشد همان استایل را می‌گیرد.
+    </div>
+    <div id="tagStylesBody" style="max-height:55vh; overflow:auto; padding:6px 2px;"></div>
+    <div class="row" style="justify-content:flex-end;">
+      <button class="btn" id="btnCloseTagStyles">بستن</button>
+    </div>
+  </div>
+
+  <!-- Style Modal -->
   <div class="modal" id="styleModal" role="dialog" aria-modal="true">
-    <h3>استایل نود</h3>
-    <div class="small" id="styleModalTitle" style="margin-bottom:6px;"></div>
+    <div class="modal-scroll">
+      <h3>استایل نود</h3>
+      <div class="small" id="styleModalTitle" style="margin-bottom:6px;"></div>
 
-    <div class="row">
-      <div class="field">
-        <label>Template / نوع نود</label>
-        <select id="templateSelect">
-          <option value="card">کارت (پیش‌فرض)</option>
-          <option value="cluster">خوشه‌ای (Cluster)</option>
-          <option value="sticky">استیکی (Sticky)</option>
-          <option value="outline">Outline</option>
-          <option value="minimal">مینیمال</option>
-        </select>
+      <div class="row">
+        <div class="field">
+          <label>Template / نوع نود</label>
+          <select id="templateSelect">
+            <option value="card">کارت (پیش‌فرض)</option>
+            <option value="cluster">خوشه‌ای (Cluster)</option>
+            <option value="sticky">استیکی (Sticky)</option>
+            <option value="outline">Outline</option>
+            <option value="minimal">مینیمال</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>فونت</label>
+          <select id="fontSelect">
+            <option value="">پیش‌فرض سیستم</option>
+            <option value="Vazirmatn, ui-sans-serif, system-ui, Segoe UI, Roboto, Arial">Vazirmatn (اگر نصب باشد)</option>
+            <option value="IRANSans, ui-sans-serif, system-ui, Segoe UI, Roboto, Arial">IRANSans (اگر نصب باشد)</option>
+            <option value="Tahoma, ui-sans-serif, system-ui, Segoe UI, Roboto, Arial">Tahoma</option>
+            <option value="Georgia, serif">Georgia</option>
+            <option value="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, monospace">Monospace</option>
+          </select>
+          <input class="input" id="customFontInput" placeholder="یا فونت دلخواه (اختیاری)" />
+        </div>
+
+        <div class="field">
+          <label>سایز فونت عنوان</label>
+          <input class="input" id="fontSizeInput" type="number" min="10" max="32" step="1" />
+        </div>
       </div>
 
-      <div class="field">
-        <label>فونت</label>
-        <select id="fontSelect">
-          <option value="">پیش‌فرض سیستم</option>
-          <option value="Vazirmatn, ui-sans-serif, system-ui, Segoe UI, Roboto, Arial">Vazirmatn (اگر نصب باشد)</option>
-          <option value="IRANSans, ui-sans-serif, system-ui, Segoe UI, Roboto, Arial">IRANSans (اگر نصب باشد)</option>
-          <option value="Tahoma, ui-sans-serif, system-ui, Segoe UI, Roboto, Arial">Tahoma</option>
-          <option value="Georgia, serif">Georgia</option>
-          <option value="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, monospace">Monospace</option>
-        </select>
-        <input class="input" id="customFontInput" placeholder="یا فونت دلخواه (اختیاری)" />
+      <div class="row">
+        <div class="field">
+          <label>رنگ بدنه (کل نود)</label>
+          <input class="input" id="bodyColorInput" type="color" value="#ffffff" />
+          <div class="palette" id="bodyPalette"></div>
+        </div>
+        <div class="field">
+          <label>رنگ کاور/هدر</label>
+          <input class="input" id="coverColorInput" type="color" value="#0e9b89" />
+          <div class="palette" id="coverPalette"></div>
+        </div>
       </div>
 
-      <div class="field">
-        <label>سایز فونت عنوان</label>
-        <input class="input" id="fontSizeInput" type="number" min="10" max="32" step="1" />
+      <div class="row">
+        <div class="field">
+          <label>تگ‌ها (با کاما جدا کن) — برای استایل تارگتی</label>
+          <input class="input" id="tagsInput" placeholder="مثلاً: مهم, تیمA, فوری" />
+          <div class="small">نودهایی که همین تگ را داشته باشند می‌توانند استایل مخصوص تگ بگیرند.</div>
+        </div>
       </div>
+
+      <div class="row">
+        <div class="field" style="flex:1 1 100%;">
+          <label>یادداشت طولانی (Note)</label>
+          <textarea id="noteInput" placeholder="هرچقدر خواستی طولانی بنویس…"></textarea>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="field" style="flex:1 1 100%;">
+          <label>قوانین استایل (خیلی مهم)</label>
+          <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center;">
+            <label class="pill" style="cursor:pointer;">
+              <input type="checkbox" id="chkPropagate" style="margin-left:8px;"> استایلِ «درختی» (به زیرمجموعه‌ها منتقل شود)
+            </label>
+            <label class="pill" style="cursor:pointer;">
+              <input type="checkbox" id="chkApplyToTag" style="margin-left:8px;"> این استایل برای تگ(های) بالا هم ذخیره شود (Target Style)
+            </label>
+          </div>
+          <div class="small">
+            • «درختی»: هر فرزندی که استایل خودش را تنظیم نکرده باشد، این استایل را ارث می‌برد.<br>
+            • «Target»: هر نودی که آن تگ را داشته باشد این استایل را می‌گیرد.
+          </div>
+        </div>
+      </div>
+
     </div>
 
-    <div class="row">
-      <div class="field">
-        <label>رنگ بدنه (کل نود)</label>
-        <input class="input" id="bodyColorInput" type="color" value="#ffffff" />
-        <div class="palette" id="bodyPalette"></div>
-      </div>
-      <div class="field">
-        <label>رنگ کاور/هدر</label>
-        <input class="input" id="coverColorInput" type="color" value="#0e9b89" />
-        <div class="palette" id="coverPalette"></div>
-      </div>
-    </div>
-
-    <div class="row">
-      <div class="field" style="flex:1 1 100%;">
-        <label>یادداشت طولانی (Note)</label>
-        <textarea id="noteInput" placeholder="هرچقدر خواستی طولانی بنویس…"></textarea>
-      </div>
-    </div>
-
-    <div class="row" style="justify-content:space-between; align-items:center;">
-      <button class="btn" id="btnResetStyle">ریست استایل</button>
-      <div style="display:flex; gap:10px;">
-        <button class="btn" id="btnCancelStyle">لغو</button>
-        <button class="btn primary" id="btnApplyStyle">اعمال</button>
+    <div class="modal-actions">
+      <div class="row" style="justify-content:space-between; align-items:center; margin:0;">
+        <button class="btn" id="btnResetStyle">ریست استایل</button>
+        <div style="display:flex; gap:10px;">
+          <button class="btn" id="btnCancelStyle">لغو</button>
+          <button class="btn primary" id="btnApplyStyle">اعمال</button>
+        </div>
       </div>
     </div>
   </div>
@@ -774,7 +880,7 @@
       <div class="item" data-act="toggleDone">تیک/برداشتن <span class="kbd">Space</span></div>
       <div class="item" data-act="toggleCollapse">جمع/باز کردن <span class="kbd">C</span></div>
       <div class="sep"></div>
-      <div class="item" data-act="style">🎨 استایل (رنگ/فونت/یادداشت/تمپلیت)</div>
+      <div class="item" data-act="style">🎨 استایل (درختی/تگ/رنگ/فونت/یادداشت)</div>
       <div class="sep"></div>
       <div class="item" data-act="startLink">ایجاد ارتباط از این نود <span class="kbd">L</span></div>
       <div class="item" data-act="manageLinks">مدیریت ارتباطات <span class="kbd">M</span></div>
@@ -806,6 +912,8 @@
   const btnManageLinks = $("#btnManageLinks");
   const linkModePill = $("#linkModePill");
 
+  const onlinePill = $("#onlinePill");
+
   // Share / view-only UI
   const viewOnlyPill = $("#viewOnlyPill");
   const btnTakeCopy = $("#btnTakeCopy");
@@ -822,6 +930,13 @@
   const btnShareActive = $("#btnShareActive");
   const btnShareAll = $("#btnShareAll");
 
+  // Online room controls
+  const roomInput = $("#roomInput");
+  const btnJoinRoom = $("#btnJoinRoom");
+  const btnCopyRoomLink = $("#btnCopyRoomLink");
+  const btnLeaveRoom = $("#btnLeaveRoom");
+  const roomHint = $("#roomHint");
+
   // Modals
   const modalBackdrop = $("#modalBackdrop");
   const linkCreateModal = $("#linkCreateModal");
@@ -833,6 +948,10 @@
   const linkManageBody = $("#linkManageBody");
   const btnCloseManageLinks = $("#btnCloseManageLinks");
 
+  const tagStylesModal = $("#tagStylesModal");
+  const tagStylesBody = $("#tagStylesBody");
+  const btnCloseTagStyles = $("#btnCloseTagStyles");
+
   // Style modal
   const styleModal = $("#styleModal");
   const styleModalTitle = $("#styleModalTitle");
@@ -842,7 +961,10 @@
   const fontSizeInput = $("#fontSizeInput");
   const bodyColorInput = $("#bodyColorInput");
   const coverColorInput = $("#coverColorInput");
+  const tagsInput = $("#tagsInput");
   const noteInput = $("#noteInput");
+  const chkPropagate = $("#chkPropagate");
+  const chkApplyToTag = $("#chkApplyToTag");
   const bodyPalette = $("#bodyPalette");
   const coverPalette = $("#coverPalette");
   const btnResetStyle = $("#btnResetStyle");
@@ -856,9 +978,18 @@
 
   const fileImport = $("#fileImport");
 
-  const STORAGE_KEY = "atomic_mindmap_v6_templates_notes_share";
-  const BACKUP_KEY = STORAGE_KEY + "_backup";
-  const MIN_ZOOM = 0.005;
+  // --------------------
+  // ✅ Firebase config (برای آنلاین واقعی اینا رو پر کن)
+  // --------------------
+  const FIREBASE_CONFIG = {
+    apiKey: "",
+    authDomain: "",
+    projectId: "",
+    // (اگر خواستی) storageBucket, messagingSenderId, appId
+  };
+
+  // --------------------
+  const MIN_ZOOM = 0.18;
   const MAX_ZOOM = 2.8;
 
   const SUPPORTS_CSS_ZOOM = (() => {
@@ -871,12 +1002,18 @@
 
   function deepClone(obj){ return JSON.parse(JSON.stringify(obj)); }
   function clamp(v,a,b){ return Math.max(a, Math.min(b, v)); }
-  function cssEscape(str){ return (str||"").replace(/["\\]/g, "\\$&"); }
+  function cssEsc(str){ return (str||"").replace(/["\\]/g, "\\$&"); }
   function newId(){
-    if (crypto && crypto.randomUUID) return crypto.randomUUID();
+    if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
     return "id_" + Math.random().toString(16).slice(2) + "_" + Date.now();
   }
   function now(){ return Date.now(); }
+
+  function escHtml(s){
+    return (s||"").replace(/[&<>"']/g, c => ({
+      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+    }[c]));
+  }
 
   // UTF-8 safe base64url
   function utf8ToB64Url(str){
@@ -905,50 +1042,50 @@
       zoom: 1,
       showGrid: true,
       showLinks: true,
-      networkMode: false
+      networkMode: false,
+      tagStyles: {} // ✅ Target styles by tag
     };
   }
 
   const app = {
-    data: {
-      version: 1,
-      activeBoard: "main",
-      boards: { main: makeBoard(), team: makeBoard() }
-    },
-    hist: {
-      main: { undo: [], redo: [] },
-      team: { undo: [], redo: [] }
-    },
-    share: { active:false, readOnly:false }, // share-link mode
+    data: { version: 2, activeBoard: "main", boards: { main: makeBoard(), team: makeBoard() } },
+    hist: { main: { undo: [], redo: [] }, team: { undo: [], redo: [] } },
+    share: { active:false, readOnly:false },
     drag: {
       mode: null,
       nodeId: null,
       pointerId: null,
       startClient: {x:0,y:0},
       startPan: {x:0,y:0},
-      startNode: {x:0,y:0},
       didMutate: false,
       dropTargetId: null,
-      draggingClassApplied: false
+      draggingEl: null,
+      grabOffset: { x: 0, y: 0 },
     },
-    linker: {
-      active: false,
-      fromId: null,
-      type: "work",
-      label: ""
-    },
+    linker: { active: false, fromId: null, type: "work", label: "" },
     pointers: new Map(),
     pinch: { active:false, startDist:0, startZoom:1 },
     longpress: { timer: null, start: {x:0,y:0}, fired: false },
-    styleEdit: { nodeId: null }
+    styleEdit: { nodeId: null, snapshot: null },
+    cloud: {
+      enabled: false,
+      roomId: null,
+      db: null,
+      roomRef: null,
+      clientId: "c_" + newId(),
+      rev: 0,
+      lastAppliedRev: 0,
+      applyingRemote: false,
+      saveTimer: null,
+      lastWriteAt: 0
+    }
   };
 
   const B = () => app.data.boards[app.data.activeBoard];
   const H = () => app.hist[app.data.activeBoard];
 
-  function isReadOnly(){
-    return app.share.active && app.share.readOnly;
-  }
+  // ---------- Readonly ----------
+  function isReadOnly(){ return app.share.active && app.share.readOnly; }
   function guardEdit(){
     if(isReadOnly()){
       alert("این لینک در حالت «نمایش فقط» است.\nبرای ویرایش: روی «ساخت نسخه خودم» بزن.");
@@ -957,25 +1094,21 @@
     return false;
   }
 
-  // ---------- Persistence ----------
-  function migrateIfNeeded(obj){
-    if(obj && obj.nodes && obj.roots){
-      return { version:1, activeBoard:"main", boards:{ main: obj, team: makeBoard() } };
-    }
-    return obj;
-  }
+  // ---------- Normalize ----------
   function normalizeNode(n){
     n.children = n.children || [];
     n.done = !!n.done;
     n.collapsed = !!n.collapsed;
     n.createdAt = n.createdAt || now();
     n.note = typeof n.note === "string" ? n.note : "";
+    n.tags = typeof n.tags === "string" ? n.tags : "";
     n.style = n.style || {};
     n.style.body = n.style.body ?? null;
     n.style.cover = n.style.cover ?? null;
     n.style.template = n.style.template || "card";
     n.style.fontFamily = n.style.fontFamily || "";
     n.style.fontSize = (typeof n.style.fontSize === "number") ? n.style.fontSize : 15;
+    n.style.propagate = !!n.style.propagate; // ✅ tree style
     return n;
   }
   function normalizeBoard(bd){
@@ -991,36 +1124,210 @@
     bd.showGrid = (typeof bd.showGrid === "boolean") ? bd.showGrid : true;
     bd.showLinks = (typeof bd.showLinks === "boolean") ? bd.showLinks : true;
     bd.networkMode = (typeof bd.networkMode === "boolean") ? bd.networkMode : false;
+    bd.tagStyles = bd.tagStyles || {};
     return bd;
   }
-  function saveLocal(){
-    if(isReadOnly()) return; // نمایش فقط، ذخیره لوکال رو دست نمی‌زنیم مگر کاربر نسخه خودش رو بسازه
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(app.data));
-    localStorage.setItem(BACKUP_KEY, JSON.stringify({ t: now(), data: app.data }));
-  }
-  function loadLocal(){
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if(!raw) return false;
-    try{
-      let obj = JSON.parse(raw);
-      obj = migrateIfNeeded(obj);
-      if(!obj || !obj.boards) return false;
+  function migrateIfNeeded(obj){
+    // v1 -> v2
+    if(obj && obj.nodes && obj.roots){
+      return { version:2, activeBoard:"main", boards:{ main: normalizeBoard(obj), team: makeBoard() } };
+    }
+    if(obj && obj.boards){
       if(!obj.boards.main) obj.boards.main = makeBoard();
       if(!obj.boards.team) obj.boards.team = makeBoard();
       obj.boards.main = normalizeBoard(obj.boards.main);
       obj.boards.team = normalizeBoard(obj.boards.team);
       obj.activeBoard = obj.activeBoard || "main";
+      obj.version = 2;
+      return obj;
+    }
+    return obj;
+  }
+
+  // ---------- Storage keys (per room) ----------
+  const BASE_KEY = "atomic_mindmap_v9_online_tree_tag_drag";
+  function storageKey(){ return BASE_KEY + "_room_" + (app.cloud.roomId || "local"); }
+  function backupKey(){ return storageKey() + "_backup"; }
+
+  // ---------- Persistence ----------
+  function saveLocal(){
+    if(isReadOnly()) return;
+    const k = storageKey();
+    localStorage.setItem(k, JSON.stringify(app.data));
+    localStorage.setItem(backupKey(), JSON.stringify({ t: now(), data: app.data }));
+  }
+  function loadLocal(){
+    const raw = localStorage.getItem(storageKey());
+    if(!raw) return false;
+    try{
+      let obj = JSON.parse(raw);
+      obj = migrateIfNeeded(obj);
+      if(!obj || !obj.boards) return false;
       app.data = obj;
       return true;
-    }catch(e){
-      return false;
+    }catch(e){ return false; }
+  }
+
+  // ---------- Cloud (Firebase Firestore) ----------
+  function hasFirebaseConfig(){
+    return !!(FIREBASE_CONFIG && FIREBASE_CONFIG.apiKey && FIREBASE_CONFIG.projectId);
+  }
+
+  function setOnlinePill(state, text){
+    onlinePill.className = "pill " + (state === "good" ? "good" : state === "warn" ? "warn" : "");
+    onlinePill.textContent = text;
+  }
+
+  function connectRoom(roomId){
+    roomId = (roomId || "").trim();
+    if(!roomId){
+      alert("Room ID را وارد کن.");
+      return;
     }
+    if(!hasFirebaseConfig()){
+      setOnlinePill("warn", "● آنلاین خاموش (Firebase تنظیم نشده)");
+      roomHint.textContent = "برای آنلاین شدن باید FIREBASE_CONFIG را در فایل پر کنی (apiKey, projectId, ...).";
+      alert("برای آنلاین واقعی: FIREBASE_CONFIG را در بالای فایل پر کن. (Firebase project لازم است)");
+      return;
+    }
+
+    try{
+      if(!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+      const db = firebase.firestore();
+
+      app.cloud.enabled = true;
+      app.cloud.db = db;
+      app.cloud.roomId = roomId;
+      app.cloud.roomRef = db.collection("mindrooms").doc(roomId);
+
+      // reflect room in URL
+      const url = new URL(location.href);
+      url.searchParams.set("room", roomId);
+      history.replaceState({}, "", url.toString());
+
+      // show status
+      setOnlinePill("good", "● آنلاین: " + roomId);
+      roomHint.textContent = "این Room مشترک است. هرکس همین لینک/Room را باز کند تغییرات را می‌بیند.";
+
+      // Listen remote
+      app.cloud.roomRef.onSnapshot((snap)=>{
+        if(!snap.exists) return;
+        const data = snap.data() || {};
+        const remote = data.state;
+        const rev = data.rev || 0;
+        const fromClient = data.clientId || "";
+
+        if(!remote || typeof remote !== "object") return;
+
+        // اگر همین کلاینت نوشته و همان rev است: ignore
+        if(fromClient === app.cloud.clientId && rev === app.cloud.rev) return;
+
+        if(rev <= app.cloud.lastAppliedRev) return;
+
+        app.cloud.applyingRemote = true;
+        try{
+          const obj = migrateIfNeeded(deepClone(remote));
+          if(obj && obj.boards){
+            app.data = obj;
+            // پاک کردن تاریخچه برای جلوگیری از قاطی شدن
+            app.hist.main.undo = []; app.hist.main.redo = [];
+            app.hist.team.undo = []; app.hist.team.redo = [];
+            cancelLinkMode();
+            syncUI(true); // skip local save inside
+            saveLocal();  // ذخیره محلی برای آفلاین
+            app.cloud.lastAppliedRev = rev;
+          }
+        } finally{
+          app.cloud.applyingRemote = false;
+        }
+      });
+
+      // Ensure room doc exists (first write if empty)
+      app.cloud.roomRef.get().then((snap)=>{
+        if(!snap.exists){
+          scheduleCloudSave(true);
+        }else{
+          // optionally load remote first
+          const data = snap.data() || {};
+          if(data.state){
+            app.cloud.applyingRemote = true;
+            try{
+              const obj = migrateIfNeeded(deepClone(data.state));
+              if(obj && obj.boards){
+                app.data = obj;
+                app.cloud.lastAppliedRev = data.rev || 0;
+                syncUI(true);
+                saveLocal();
+              }
+            } finally{
+              app.cloud.applyingRemote = false;
+            }
+          }
+        }
+      });
+
+      // load local for this room if exists
+      // (اگر دوست داری اول local بیاد، این خط رو قبل از connectRoom صدا بزن)
+    }catch(err){
+      console.error(err);
+      setOnlinePill("warn", "● آنلاین خطا");
+      alert("اتصال آنلاین ناموفق بود. کنسول را ببین.");
+    }
+  }
+
+  function disconnectRoom(){
+    // ما نمی‌تونیم listener رو راحت detach کنیم چون onSnapshot unsubscribe ذخیره نشده،
+    // پس ساده‌ترین: reload بدون پارامتر room
+    app.cloud.enabled = false;
+    app.cloud.roomId = null;
+    app.cloud.db = null;
+    app.cloud.roomRef = null;
+    app.cloud.rev = 0;
+    app.cloud.lastAppliedRev = 0;
+
+    const url = new URL(location.href);
+    url.searchParams.delete("room");
+    history.replaceState({}, "", url.toString());
+
+    setOnlinePill("", "● آفلاین");
+    roomHint.textContent = "از Room خارج شدی. اکنون تغییرات فقط محلی ذخیره می‌شوند.";
+  }
+
+  function scheduleCloudSave(force=false){
+    if(!app.cloud.enabled || !app.cloud.roomRef) return;
+    if(app.cloud.applyingRemote) return;
+    if(isReadOnly()) return;
+    if(!force){
+      if(app.cloud.saveTimer) clearTimeout(app.cloud.saveTimer);
+      app.cloud.saveTimer = setTimeout(()=> cloudSaveNow(), 450);
+      return;
+    }
+    cloudSaveNow();
+  }
+
+  function cloudSaveNow(){
+    if(!app.cloud.enabled || !app.cloud.roomRef) return;
+    if(app.cloud.applyingRemote) return;
+    if(isReadOnly()) return;
+
+    app.cloud.rev = (app.cloud.rev || 0) + 1;
+    const payload = {
+      state: app.data,
+      rev: app.cloud.rev,
+      clientId: app.cloud.clientId,
+      updatedAtMs: Date.now()
+    };
+
+    app.cloud.roomRef.set(payload, { merge: true }).catch((e)=>{
+      console.warn("cloud save failed", e);
+      setOnlinePill("warn", "● آنلاین مشکل دارد");
+    });
   }
 
   // ---------- Share link (view-only) ----------
   function getSharePayload(kind){
     if(kind === "all") return app.data;
-    return { version:1, activeBoard: app.data.activeBoard, boards: { [app.data.activeBoard]: B() } };
+    return { version:2, activeBoard: app.data.activeBoard, boards: { [app.data.activeBoard]: B() } };
   }
   function makeShareLink(kind){
     const payload = getSharePayload(kind);
@@ -1029,51 +1336,29 @@
     const url = new URL(location.href);
     url.searchParams.set("share", token);
     url.searchParams.set("ro", "1");
-    url.searchParams.set("k", kind); // active|all
+    url.searchParams.set("k", kind);
     return url.toString();
   }
   async function copyToClipboard(text){
-    try{
-      await navigator.clipboard.writeText(text);
-      alert("لینک کپی شد ✅");
-    }catch{
-      prompt("کپی کن:", text);
-    }
+    try{ await navigator.clipboard.writeText(text); alert("کپی شد ✅"); }
+    catch{ prompt("کپی کن:", text); }
   }
   function tryLoadFromShareLink(){
     const url = new URL(location.href);
     const token = url.searchParams.get("share");
     if(!token) return false;
-
     try{
       const json = b64UrlToUtf8(token);
       const obj = migrateIfNeeded(JSON.parse(json));
       if(!obj || !obj.boards) return false;
-
-      if(!obj.boards.main && !obj.boards.team){
-        // اگر فقط یک برد داخلش بود
-        const k = url.searchParams.get("k");
-        if(k === "all") return false;
-      }
-
-      // normalize
-      if(!obj.boards.main) obj.boards.main = makeBoard();
-      if(!obj.boards.team) obj.boards.team = makeBoard();
-      obj.boards.main = normalizeBoard(obj.boards.main);
-      obj.boards.team = normalizeBoard(obj.boards.team);
-      obj.activeBoard = obj.activeBoard || "main";
-
       app.data = obj;
       app.share.active = true;
       app.share.readOnly = url.searchParams.get("ro") === "1";
-
-      // show UI
       if(app.share.readOnly){
         viewOnlyPill.style.display = "inline-flex";
         viewOnlyPill.textContent = "نمایش فقط (لینک اشتراکی)";
         btnTakeCopy.style.display = "inline-flex";
       }
-
       return true;
     }catch(e){
       console.warn(e);
@@ -1081,11 +1366,9 @@
     }
   }
   function takeCopyFromShare(){
-    // این کار: دیتا را وارد لوکال می‌کند و از حالت share خارج می‌شود
     app.share.readOnly = false;
     app.share.active = false;
 
-    // پاک کردن پارامترهای share از URL
     const url = new URL(location.href);
     url.searchParams.delete("share");
     url.searchParams.delete("ro");
@@ -1113,7 +1396,7 @@
     H().redo.push(deepClone(B()));
     app.data.boards[app.data.activeBoard] = H().undo.pop();
     cancelLinkMode();
-    syncUI(true);
+    syncUI();
   }
   function redo(){
     if(isReadOnly()) return guardEdit();
@@ -1121,7 +1404,7 @@
     H().undo.push(deepClone(B()));
     app.data.boards[app.data.activeBoard] = H().redo.pop();
     cancelLinkMode();
-    syncUI(true);
+    syncUI();
   }
 
   // ---------- UI helpers ----------
@@ -1139,7 +1422,6 @@
     if(settingsPanel.classList.contains("open")) closeSettings();
     else openSettings();
   }
-
   function openDrawer(){
     drawerBackdrop.classList.add("open");
     drawer.classList.add("open");
@@ -1150,7 +1432,6 @@
     drawerBackdrop.classList.remove("open");
     drawer.classList.remove("open");
   }
-
   function openModal(modalEl){
     modalBackdrop.classList.add("open");
     modalEl.classList.add("open");
@@ -1161,24 +1442,18 @@
       linkCreateModal.classList.contains("open") ||
       linkManageModal.classList.contains("open") ||
       styleModal.classList.contains("open") ||
-      trashModal.classList.contains("open");
+      trashModal.classList.contains("open") ||
+      tagStylesModal.classList.contains("open");
     if(!anyOpen) modalBackdrop.classList.remove("open");
   }
 
   settingsPanel.addEventListener("pointerdown", (e)=> e.stopPropagation());
   drawer.addEventListener("pointerdown", (e)=> e.stopPropagation());
-  [linkCreateModal, linkManageModal, styleModal, trashModal].forEach(m=>{
+  [linkCreateModal, linkManageModal, styleModal, trashModal, tagStylesModal].forEach(m=>{
     m.addEventListener("pointerdown", (e)=> e.stopPropagation());
   });
 
-  modalBackdrop.addEventListener("click", ()=>{
-    closeModal(linkCreateModal);
-    closeModal(linkManageModal);
-    closeModal(styleModal);
-    closeModal(trashModal);
-  });
-
-  // ---------- Crisp Zoom ----------
+  // ---------- Zoom / Camera ----------
   function formatZoomLabel(){
     const pct = B().zoom * 100;
     if(pct >= 10) return Math.round(pct) + "%";
@@ -1240,7 +1515,7 @@
   function nodeCenter(id){
     const n = B().nodes[id];
     if(!n) return {x:0,y:0};
-    return { x: n.x + 130, y: n.y + 35 };
+    return { x: n.x + 130, y: n.y + 36 };
   }
   function centerOnNode(id){
     const rect = viewport.getBoundingClientRect();
@@ -1299,7 +1574,8 @@
       done:false, collapsed:false, children:[],
       x,y, createdAt: now(),
       note:"",
-      style:{ body:null, cover:null, template:"card", fontFamily:"", fontSize:15 }
+      tags:"",
+      style:{ body:null, cover:null, template:"card", fontFamily:"", fontSize:15, propagate:false }
     });
     if(parentId){
       B().nodes[parentId].children.push(id);
@@ -1309,41 +1585,6 @@
     return id;
   }
 
-  function detachFromParent(id){
-    const n = B().nodes[id];
-    if(!n) return;
-    if(n.parentId){
-      const p = B().nodes[n.parentId];
-      if(p) p.children = (p.children||[]).filter(cid => cid !== id);
-    }else{
-      B().roots = B().roots.filter(rid => rid !== id);
-    }
-    n.parentId = null;
-  }
-  function attachToParent(id, newParentId){
-    const n = B().nodes[id];
-    const p = B().nodes[newParentId];
-    if(!n || !p) return;
-    p.collapsed = false;
-    n.parentId = newParentId;
-    p.children = p.children || [];
-    p.children.push(id);
-  }
-  function reparentNode(id, newParentId){
-    const n = B().nodes[id];
-    if(!n) return;
-    if(newParentId === id) return;
-    if(isInSubtree(id, newParentId)) return;
-
-    detachFromParent(id);
-    attachToParent(id, newParentId);
-
-    const p = B().nodes[newParentId];
-    n.x = clamp(p.x + 320, 40, 9800);
-    n.y = clamp(n.y, 40, 9800);
-  }
-
-  // Soft delete
   function trashNode(id){
     const n = B().nodes[id];
     if(!n) return;
@@ -1475,6 +1716,41 @@
     syncUI();
   }
 
+  // ---------- Reparent helpers ----------
+  function detachFromParent(id){
+    const n = B().nodes[id];
+    if(!n) return;
+    if(n.parentId){
+      const p = B().nodes[n.parentId];
+      if(p) p.children = (p.children||[]).filter(cid => cid !== id);
+    }else{
+      B().roots = B().roots.filter(rid => rid !== id);
+    }
+    n.parentId = null;
+  }
+  function attachToParent(id, newParentId){
+    const n = B().nodes[id];
+    const p = B().nodes[newParentId];
+    if(!n || !p) return;
+    p.collapsed = false;
+    n.parentId = newParentId;
+    p.children = p.children || [];
+    p.children.push(id);
+  }
+  function reparentNode(id, newParentId){
+    const n = B().nodes[id];
+    if(!n) return;
+    if(newParentId === id) return;
+    if(isInSubtree(id, newParentId)) return;
+
+    detachFromParent(id);
+    attachToParent(id, newParentId);
+
+    const p = B().nodes[newParentId];
+    n.x = clamp(p.x + 320, 40, 9800);
+    n.y = clamp(n.y, 40, 9800);
+  }
+
   // ---------- Links ----------
   function startLinkMode(fromId, type, label){
     if(!fromId || !B().nodes[fromId]) return;
@@ -1487,9 +1763,7 @@
     linkModePill.className = "pill warn";
     linkModePill.textContent = "حالت لینک فعال: مقصد را انتخاب کن… (Esc لغو)";
 
-    closeContextMenu();
-    closeSettings();
-    closeDrawer();
+    closeContextMenu(); closeSettings(); closeDrawer();
   }
   function cancelLinkMode(){
     app.linker.active = false;
@@ -1558,10 +1832,6 @@
     const name = n?.text || "بدون عنوان";
     const {out, inc} = linksForNode(nodeId);
 
-    const esc = (s)=>(s||"").replace(/[&<>"']/g, c => ({
-      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
-    }[c]));
-
     const renderItem = (l, dir) => {
       const otherId = (dir==="out") ? l.toId : l.fromId;
       const other = B().nodes[otherId];
@@ -1570,32 +1840,30 @@
       const label = (l.label||"").trim();
 
       return `
-        <div style="border:1px solid rgba(16,24,40,.10);border-radius:14px;padding:10px;margin:8px 0;background:rgba(255,255,255,.78);">
-          <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
-            <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-              <span class="pill">${type === "work" ? "Work" : "Semantic"}</span>
-              ${label ? `<span class="pill">${esc(label)}</span>` : `<span class="pill" style="opacity:.7;">بدون برچسب</span>`}
-              <span class="small">${dir==="out" ? "→" : "←"} ${esc(otherName)}</span>
+        <div style="border:1px solid rgba(16,24,40,.08); border-radius:14px; padding:10px; margin:8px 0; background:white;">
+          <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+            <div>
+              <b>${type === "work" ? "Work" : "Semantic"}</b>
+              ${label ? `<span class="badge tag" style="margin-inline-start:8px;">${escHtml(label)}</span>` : `<span class="small" style="margin-inline-start:8px;">بدون برچسب</span>`}
             </div>
-            <div style="display:flex;gap:8px;align-items:center;">
-              <button class="btn" data-act="jump" data-id="${esc(otherId)}">رفتن</button>
-              <button class="btn danger" data-act="del" data-id="${esc(l.id)}" ${isReadOnly() ? "disabled" : ""}>حذف</button>
-            </div>
+            <div class="small">${dir==="out" ? "→" : "←"} ${escHtml(otherName)}</div>
+          </div>
+          <div style="display:flex; gap:10px; justify-content:flex-end; margin-top:10px;">
+            <button class="btn" data-act="jump" data-id="${escHtml(otherId)}">رفتن</button>
+            <button class="btn danger" data-act="del" data-id="${escHtml(l.id)}" ${isReadOnly() ? "disabled" : ""}>حذف</button>
           </div>
         </div>
       `;
     };
 
     linkManageBody.innerHTML = `
-      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:10px;">
-        <div style="font-weight:900;">نود: ${esc(name)}</div>
-        <div class="pill">${out.length} خروجی · ${inc.length} ورودی</div>
-      </div>
+      <div class="small">نود: <b>${escHtml(name)}</b></div>
+      <div class="small" style="margin:8px 0;">${out.length} خروجی · ${inc.length} ورودی</div>
 
-      <div style="font-weight:900;margin:10px 0 6px;">خروجی‌ها</div>
+      <div style="margin-top:10px; font-weight:900;">خروجی‌ها</div>
       ${out.length ? out.map(l => renderItem(l,"out")).join("") : `<div class="small">هیچ خروجی‌ای ندارد.</div>`}
 
-      <div style="font-weight:900;margin:16px 0 6px;">ورودی‌ها</div>
+      <div style="margin-top:14px; font-weight:900;">ورودی‌ها</div>
       ${inc.length ? inc.map(l => renderItem(l,"inc")).join("") : `<div class="small">هیچ ورودی‌ای ندارد.</div>`}
     `;
 
@@ -1622,6 +1890,57 @@
     });
   }
 
+  // ---------- Tag styles modal ----------
+  function openTagStylesModal(){
+    renderTagStyles();
+    openModal(tagStylesModal);
+  }
+  function renderTagStyles(){
+    const ts = B().tagStyles || {};
+    const tags = Object.keys(ts).sort((a,b)=>a.localeCompare(b,"fa"));
+    if(!tags.length){
+      tagStylesBody.innerHTML = `<div class="small">هیچ استایلی برای تگ‌ها ذخیره نشده.</div>`;
+      return;
+    }
+    tagStylesBody.innerHTML = tags.map(tag=>{
+      const st = ts[tag] || {};
+      const tpl = st.template || "card";
+      const body = st.body || "";
+      const cover = st.cover || "";
+      const ff = st.fontFamily || "";
+      const fs = st.fontSize || 15;
+
+      return `
+        <div style="border:1px solid rgba(16,24,40,.10); border-radius:16px; padding:12px; background:white; margin:10px 0;">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+            <div><span class="badge tag">#${escHtml(tag)}</span></div>
+            <button class="btn danger" data-act="delTag" data-tag="${escHtml(tag)}" ${isReadOnly() ? "disabled" : ""}>حذف استایل تگ</button>
+          </div>
+          <div class="small" style="margin-top:8px;">
+            Template: <b>${escHtml(tpl)}</b> · FontSize: <b>${fs}</b>
+            ${ff ? ` · Font: <b>${escHtml(ff)}</b>` : ""}
+            ${body ? ` · Body: <b>${escHtml(body)}</b>` : ""}
+            ${cover ? ` · Cover: <b>${escHtml(cover)}</b>` : ""}
+          </div>
+        </div>
+      `;
+    }).join("");
+
+    tagStylesBody.querySelectorAll('button[data-act="delTag"]').forEach(btn=>{
+      btn.addEventListener("click", ()=>{
+        if(isReadOnly()) return guardEdit();
+        const tag = btn.getAttribute("data-tag");
+        if(!tag) return;
+        if(confirm(`استایل تگ «${tag}» حذف شود؟`)){
+          pushHistory();
+          delete B().tagStyles[tag];
+          syncUI();
+          renderTagStyles();
+        }
+      });
+    });
+  }
+
   // ---------- Style / Templates / Fonts / Notes ----------
   const PALETTE = [
     "#ffffff","#f3f4f6","#fde2e2","#ffe8cc","#fff3bf","#d3f9d8","#d0ebff","#e5dbff","#ffe3f1",
@@ -1638,13 +1957,74 @@
       container.appendChild(s);
     }
   }
-  renderPalette(bodyPalette, c => bodyColorInput.value = c);
-  renderPalette(coverPalette, c => coverColorInput.value = c);
+  renderPalette(bodyPalette, c => { bodyColorInput.value = c; const id = app.styleEdit.nodeId; if(id) previewStyle(id); });
+  renderPalette(coverPalette, c => { coverColorInput.value = c; const id = app.styleEdit.nodeId; if(id) previewStyle(id); });
+
+  function parseTags(s){
+    return (s||"")
+      .split(",")
+      .map(x => x.trim())
+      .filter(Boolean)
+      .join(", ");
+  }
+
+  function getStylePatchFromInputs(){
+    const chosenFont = (customFontInput.value || "").trim() || (fontSelect.value || "");
+    const fs = clamp(parseInt(fontSizeInput.value || "15", 10) || 15, 10, 32);
+    return {
+      template: templateSelect.value,
+      body: bodyColorInput.value,
+      cover: coverColorInput.value,
+      fontFamily: chosenFont,
+      fontSize: fs,
+      note: noteInput.value || "",
+      tags: parseTags(tagsInput.value || ""),
+      propagate: !!chkPropagate.checked,
+      applyToTag: !!chkApplyToTag.checked
+    };
+  }
+
+  function previewStyle(nodeId){
+    const n = B().nodes[nodeId];
+    if(!n) return;
+
+    const patch = getStylePatchFromInputs();
+
+    n.style = n.style || {};
+    n.style.template = patch.template || "card";
+    n.style.body = patch.body || null;
+    n.style.cover = patch.cover || null;
+    n.style.fontFamily = patch.fontFamily || "";
+    n.style.fontSize = patch.fontSize || 15;
+    n.style.propagate = !!patch.propagate;
+
+    n.note = patch.note || "";
+    n.tags = patch.tags || "";
+
+    render(); // فقط رندر - بدون history/save
+  }
+
+  function restoreStyleSnapshot(){
+    const id = app.styleEdit.nodeId;
+    const snap = app.styleEdit.snapshot;
+    if(!id || !snap || !B().nodes[id]) return;
+
+    B().nodes[id].style = deepClone(snap.style || {});
+    B().nodes[id].note  = snap.note || "";
+    B().nodes[id].tags  = snap.tags || "";
+    render();
+  }
 
   function openStyleModal(nodeId){
     const n = B().nodes[nodeId];
     if(!n) return;
+
     app.styleEdit.nodeId = nodeId;
+    app.styleEdit.snapshot = {
+      style: deepClone(n.style || {}),
+      note: n.note || "",
+      tags: n.tags || ""
+    };
 
     templateSelect.value = (n.style?.template || "card");
     bodyColorInput.value = n.style?.body || "#ffffff";
@@ -1653,27 +2033,67 @@
     customFontInput.value = "";
     fontSizeInput.value = String(n.style?.fontSize ?? 15);
     noteInput.value = n.note || "";
+    tagsInput.value = n.tags || "";
+
+    chkPropagate.checked = !!(n.style?.propagate);
+    chkApplyToTag.checked = false;
 
     styleModalTitle.textContent = `نود: ${n.text || "بدون عنوان"}`;
     openModal(styleModal);
   }
 
-  function applyStyle(nodeId, patch){
-    if(guardEdit()) return;
-    const n = B().nodes[nodeId];
-    if(!n) return;
+  // Live preview
+  const liveInputs = [templateSelect, fontSelect, customFontInput, fontSizeInput, bodyColorInput, coverColorInput, noteInput, tagsInput, chkPropagate];
+  liveInputs.forEach(el=>{
+    el.addEventListener("input", ()=>{ const id = app.styleEdit.nodeId; if(id) previewStyle(id); });
+    el.addEventListener("change", ()=>{ const id = app.styleEdit.nodeId; if(id) previewStyle(id); });
+  });
 
-    pushHistory();
+  // ---------- Effective style (tree + tag) ----------
+  function getTagStyleForNode(n){
+    const tags = parseTags(n.tags).split(",").map(t=>t.trim()).filter(Boolean);
+    if(!tags.length) return null;
+    for(const t of tags){
+      if(B().tagStyles && B().tagStyles[t]) return B().tagStyles[t];
+    }
+    return null;
+  }
 
-    n.style = n.style || {};
-    n.style.template = patch.template || "card";
-    n.style.body = patch.body || null;
-    n.style.cover = patch.cover || null;
-    n.style.fontFamily = patch.fontFamily || "";
-    n.style.fontSize = patch.fontSize || 15;
-    n.note = patch.note || "";
+  function getInheritedStyle(n){
+    // walk ancestors, collect propagate styles
+    const merged = {};
+    let cur = n;
+    while(cur && cur.parentId){
+      const p = B().nodes[cur.parentId];
+      if(!p) break;
+      if(p.style && p.style.propagate){
+        // parent propagate provides base
+        if(p.style.template) merged.template = p.style.template;
+        if(p.style.body) merged.body = p.style.body;
+        if(p.style.cover) merged.cover = p.style.cover;
+        if(p.style.fontFamily) merged.fontFamily = p.style.fontFamily;
+        if(p.style.fontSize) merged.fontSize = p.style.fontSize;
+      }
+      cur = p;
+    }
+    return merged;
+  }
 
-    syncUI();
+  function getEffectiveStyle(n){
+    const inherited = getInheritedStyle(n);
+    const tagStyle = getTagStyleForNode(n) || {};
+    const local = n.style || {};
+
+    // priority: inherited -> tagStyle -> local
+    const eff = {
+      template: inherited.template || tagStyle.template || local.template || "card",
+      body: local.body || tagStyle.body || inherited.body || null,
+      cover: local.cover || tagStyle.cover || inherited.cover || null,
+      fontFamily: local.fontFamily || tagStyle.fontFamily || inherited.fontFamily || "",
+      fontSize: local.fontSize || tagStyle.fontSize || inherited.fontSize || 15,
+      propagate: !!local.propagate
+    };
+    return eff;
   }
 
   // ---------- Layout ----------
@@ -1718,6 +2138,7 @@
   function renderEdges(){
     clear(edgesSvg);
 
+    // defs arrow
     const defs = document.createElementNS("http://www.w3.org/2000/svg", "defs");
     const marker = document.createElementNS("http://www.w3.org/2000/svg", "marker");
     marker.setAttribute("id", "arrowHead");
@@ -1734,6 +2155,7 @@
     defs.appendChild(marker);
     edgesSvg.appendChild(defs);
 
+    // tree edges
     if(!B().networkMode){
       for(const id in B().nodes){
         const n = B().nodes[id];
@@ -1745,8 +2167,8 @@
         if(p.collapsed) continue;
         if(isHiddenByAncestor(p.id)) continue;
 
-        const start = { x: p.x + 260, y: p.y + 35 };
-        const end   = { x: n.x,       y: n.y + 35 };
+        const start = { x: p.x + 260, y: p.y + 36 };
+        const end   = { x: n.x,       y: n.y + 36 };
 
         const dx = Math.max(90, (end.x - start.x) * 0.5);
         const c1 = { x: start.x + dx, y: start.y };
@@ -1759,6 +2181,7 @@
       }
     }
 
+    // custom links
     if(B().showLinks){
       for(const l of (B().links||[])){
         const from = B().nodes[l.fromId];
@@ -1766,8 +2189,8 @@
         if(!from || !to) continue;
         if(isHiddenByAncestor(from.id) || isHiddenByAncestor(to.id)) continue;
 
-        const a = { x: from.x + 130, y: from.y + 35 };
-        const b = { x: to.x   + 130, y: to.y   + 35 };
+        const a = { x: from.x + 130, y: from.y + 36 };
+        const b = { x: to.x   + 130, y: to.y   + 36 };
 
         const dx = b.x - a.x;
         const dy = b.y - a.y;
@@ -1815,9 +2238,12 @@
   function renderNode(n, memo){
     if(isHiddenByAncestor(n.id)) return;
 
-    const tpl = (n.style?.template || "card");
+    const eff = getEffectiveStyle(n);
+    const tpl = eff.template || "card";
+
     const el = document.createElement("div");
-    el.className = "node" +
+    el.className =
+      "node" +
       ` tpl-${tpl}` +
       (n.id === B().selectedId ? " selected" : "") +
       (n.done ? " done" : "") +
@@ -1826,29 +2252,32 @@
     el.style.top  = n.y + "px";
     el.dataset.id = n.id;
 
-    if(n.style?.body) el.style.background = n.style.body;
-
-    // font settings on container (affects title)
-    if(n.style?.fontFamily) el.style.fontFamily = n.style.fontFamily;
-    if(typeof n.style?.fontSize === "number") el.style.setProperty("--titleSize", String(n.style.fontSize));
+    if(eff.body) el.style.background = eff.body;
+    if(eff.fontFamily) el.style.fontFamily = eff.fontFamily;
 
     const st = subtreeStats(n.id, memo);
     const percent = st.total ? Math.round((st.done / st.total) * 100) : 0;
     const hasNote = (n.note || "").trim().length > 0;
+    const tags = parseTags(n.tags);
+    const hasTag = !!tags;
 
     el.innerHTML = `
       <div class="hdr" data-role="hdr">
+        <div class="drag-handle" data-role="drag" title="برای جابجایی بگیر و بکش">⠿</div>
         <input class="checkbox" type="checkbox" ${n.done ? "checked" : ""} data-role="done" />
         <div class="title" contenteditable="${isReadOnly() ? "false" : "true"}" spellcheck="false" data-role="title"></div>
-        <button class="mini icon" title="استایل" data-role="style">🎨</button>
-        <button class="mini icon" title="جمع/باز" data-role="collapse">${n.collapsed ? "▸" : "▾"}</button>
+        <button class="mini icon" data-role="collapse" title="جمع/باز" ${isReadOnly() ? "disabled" : ""}>${n.collapsed ? "▸" : "▾"}</button>
+        <button class="mini icon" data-role="style" title="استایل" ${isReadOnly() ? "disabled" : ""}>🎨</button>
       </div>
+
       <div class="meta">
-        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+        <div style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
           <span class="badge">${st.done}/${st.total} · ${percent}%</span>
           ${hasNote ? `<span class="badge note">📝 Note</span>` : ``}
+          ${hasTag ? `<span class="badge tag">🏷 ${escHtml(tags)}</span>` : ``}
+          ${eff.propagate ? `<span class="badge" title="این نود استایل را به زیرمجموعه‌ها می‌دهد">🌿 درختی</span>` : ``}
         </div>
-        <div style="display:flex; gap:8px">
+        <div style="display:flex; gap:8px;">
           <button class="mini" data-role="addChild" ${isReadOnly() ? "disabled" : ""}>➕ زیرکار</button>
           <button class="mini" data-role="delete" style="color:var(--danger)" ${isReadOnly() ? "disabled" : ""}>حذف</button>
         </div>
@@ -1856,14 +2285,15 @@
     `;
 
     const hdr = el.querySelector('[data-role="hdr"]');
-    if(n.style?.cover){
-      hdr.style.background = `linear-gradient(180deg, ${n.style.cover}22, ${n.style.cover}11)`;
+    if(eff.cover){
+      hdr.style.background = `linear-gradient(180deg, ${eff.cover}22, ${eff.cover}11)`;
     }
 
     const title = el.querySelector('[data-role="title"]');
     title.textContent = n.text;
-    title.style.fontSize = (n.style?.fontSize ? n.style.fontSize : 15) + "px";
+    title.style.fontSize = (eff.fontSize ? eff.fontSize : 15) + "px";
 
+    // select + handle drag + linking
     el.addEventListener("pointerdown", (e) => {
       if(e.button === 2) return;
       selectNode(n.id);
@@ -1879,22 +2309,35 @@
         return;
       }
 
-      const isInteractive = e.target.closest?.('[data-role="title"], [data-role="done"], button, input');
-      if(isInteractive) return;
+      const isTitle = e.target.closest?.('[data-role="title"]');
+      const isDone  = e.target.closest?.('[data-role="done"]');
+      const isBtnOrInput = e.target.closest?.('button, input, textarea, select');
+      const isDragHandle = e.target.closest?.('[data-role="drag"]');
+      const inHdr = e.target.closest?.('[data-role="hdr"]');
+
+      // عنوان/چک‌باکس: فقط ادیت/تیک
+      if(isTitle || isDone) return;
+
+      // دکمه‌ها: نه (جز drag-handle که div است)
+      if(isBtnOrInput && !isDragHandle) return;
+
+      // فقط از handle یا از فضای هدر (به جز title) اجازه‌ی drag بده
+      if(!(isDragHandle || inHdr)) return;
 
       viewport.setPointerCapture(e.pointerId);
       app.drag.mode = (e.pointerType === "mouse") ? "node" : "node_pending";
       app.drag.nodeId = n.id;
       app.drag.pointerId = e.pointerId;
       app.drag.startClient = { x: e.clientX, y: e.clientY };
-      app.drag.startNode = { x: n.x, y: n.y };
       app.drag.didMutate = false;
       app.drag.dropTargetId = null;
-      app.drag.draggingClassApplied = false;
+      app.drag.draggingEl = el;
+
+      const w = clientToWorld(e.clientX, e.clientY);
+      app.drag.grabOffset = { x: w.x - n.x, y: w.y - n.y };
 
       if(app.drag.mode === "node"){
         el.classList.add("dragging");
-        app.drag.draggingClassApplied = true;
       }
     });
 
@@ -1929,7 +2372,10 @@
 
   function syncUI(skipSave=false){
     render();
-    if(!skipSave) saveLocal();
+    if(!skipSave){
+      saveLocal();
+      scheduleCloudSave(false); // ✅ هر تغییر برای همه آنلاین می‌رود
+    }
   }
 
   function selectNode(id){
@@ -1940,7 +2386,7 @@
 
   function focusTitle(id){
     requestAnimationFrame(()=>{
-      const el = nodesLayer.querySelector(`.node[data-id="${cssEscape(id)}"]`);
+      const el = nodesLayer.querySelector(`.node[data-id="${cssEsc(id)}"]`);
       if(!el) return;
       const t = el.querySelector('[data-role="title"]');
       if(isReadOnly()) return;
@@ -1971,12 +2417,11 @@
 
       const topLeft = worldToClient(n.x, n.y);
       const w = 260 * B().zoom;
-      const h = 110 * B().zoom;
+      const h = 120 * B().zoom;
 
       const inside =
         clientX >= topLeft.x && clientX <= topLeft.x + w &&
         clientY >= topLeft.y && clientY <= topLeft.y + h;
-
       if(!inside) continue;
 
       const cx = topLeft.x + w/2;
@@ -2003,9 +2448,7 @@
     ctxMenu.style.top  = y + "px";
     ctxMenu.classList.add("open");
   }
-  function closeContextMenu(){
-    ctxMenu.classList.remove("open");
-  }
+  function closeContextMenu(){ ctxMenu.classList.remove("open"); }
 
   ctxMenu.addEventListener("pointerup", (e)=>{
     e.preventDefault();
@@ -2033,7 +2476,6 @@
     }
     closeContextMenu();
   });
-
   ctxMenu.addEventListener("pointerdown", (e)=> e.stopPropagation());
 
   // ---------- Grid / Buttons ----------
@@ -2081,17 +2523,15 @@
       return;
     }
 
-    const esc = (s)=>(s||"").replace(/[&<>"']/g, c => ({
-      "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
-    }[c]));
-
     trashBody.innerHTML = items.map(n => `
-      <div style="border:1px solid rgba(16,24,40,.10);border-radius:14px;padding:10px;margin:8px 0;background:rgba(255,255,255,.78);">
-        <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
-          <div style="font-weight:900;">${esc(n.text || "بدون عنوان")}</div>
-          <button class="btn primary" data-act="restore" data-id="${esc(n.id)}" ${isReadOnly() ? "disabled" : ""}>بازیابی</button>
+      <div style="border:1px solid rgba(16,24,40,.10); border-radius:16px; padding:12px; background:white; margin:10px 0;">
+        <div style="display:flex; justify-content:space-between; gap:10px; flex-wrap:wrap;">
+          <div><b>${escHtml(n.text || "بدون عنوان")}</b></div>
+          <button class="btn primary" data-act="restore" data-id="${escHtml(n.id)}" ${isReadOnly() ? "disabled" : ""}>بازیابی</button>
         </div>
-        <div class="small">ID: ${esc(n.id)} · ${new Date(n.trashedAt||now()).toLocaleString("fa-IR")}</div>
+        <div class="small" style="margin-top:8px;">
+          ID: ${escHtml(n.id)} · ${new Date(n.trashedAt||now()).toLocaleString("fa-IR")}
+        </div>
       </div>
     `).join("");
 
@@ -2124,7 +2564,10 @@
     cancelLinkMode();
     boardSeg.querySelectorAll("button").forEach(b=> b.classList.toggle("active", b.dataset.board === boardId));
     syncUI(true);
-    if(!isReadOnly()) saveLocal();
+    if(!isReadOnly()){
+      saveLocal();
+      scheduleCloudSave(false);
+    }
     closeDrawer();
     const focusId = B().selectedId ?? B().roots[0];
     if(focusId) centerOnNode(focusId);
@@ -2158,7 +2601,7 @@
     zoomAt(r.left + r.width/2, r.top + r.height/2, B().zoom / 1.12);
   });
   $("#btnZoomReset").addEventListener("click", ()=>{
-    if(isReadOnly()) {
+    if(isReadOnly()){
       B().zoom = 1;
       const id = B().selectedId ?? B().roots[0];
       if(id) centerOnNode(id);
@@ -2171,6 +2614,7 @@
     if(id) centerOnNode(id);
     applyTransforms();
     saveLocal();
+    scheduleCloudSave(false);
   });
 
   $("#btnUndo").addEventListener("click", undo);
@@ -2181,7 +2625,6 @@
     if(!id) return;
     centerOnNode(id);
   });
-
   $("#btnGrid").addEventListener("click", ()=>{
     if(guardEdit()) return;
     pushHistory();
@@ -2214,6 +2657,9 @@
   btnManageLinks.addEventListener("click", openManageLinksModal);
   btnCloseManageLinks.addEventListener("click", ()=> closeModal(linkManageModal));
 
+  $("#btnTagStyles").addEventListener("click", openTagStylesModal);
+  btnCloseTagStyles.addEventListener("click", ()=> closeModal(tagStylesModal));
+
   btnCancelCreateLink.addEventListener("click", ()=> closeModal(linkCreateModal));
   btnStartLinking.addEventListener("click", ()=>{
     const id = B().selectedId;
@@ -2233,24 +2679,55 @@
     customFontInput.value = "";
     fontSizeInput.value = "15";
     noteInput.value = "";
+    tagsInput.value = "";
+    chkPropagate.checked = false;
+    chkApplyToTag.checked = false;
+    const id = app.styleEdit.nodeId;
+    if(id) previewStyle(id);
   });
-  btnCancelStyle.addEventListener("click", ()=> closeModal(styleModal));
+
+  btnCancelStyle.addEventListener("click", ()=>{
+    restoreStyleSnapshot();
+    closeModal(styleModal);
+  });
+
   btnApplyStyle.addEventListener("click", ()=>{
     const id = app.styleEdit.nodeId;
     if(!id) return closeModal(styleModal);
+    if(guardEdit()) return;
 
-    const chosenFont = (customFontInput.value || "").trim() || (fontSelect.value || "");
-    const fs = clamp(parseInt(fontSizeInput.value || "15", 10) || 15, 10, 32);
+    const patch = getStylePatchFromInputs();
+    pushHistory();
 
-    applyStyle(id, {
-      template: templateSelect.value,
-      body: bodyColorInput.value,
-      cover: coverColorInput.value,
-      fontFamily: chosenFont,
-      fontSize: fs,
-      note: noteInput.value || ""
-    });
+    const n = B().nodes[id];
+    n.style = n.style || {};
+    n.style.template = patch.template || "card";
+    n.style.body = patch.body || null;
+    n.style.cover = patch.cover || null;
+    n.style.fontFamily = patch.fontFamily || "";
+    n.style.fontSize = patch.fontSize || 15;
+    n.style.propagate = !!patch.propagate;
 
+    n.note = patch.note || "";
+    n.tags = patch.tags || "";
+
+    // ✅ Target style by tag: ذخیره‌ی استایل برای تگ‌ها
+    if(patch.applyToTag){
+      const tags = parseTags(n.tags).split(",").map(t=>t.trim()).filter(Boolean);
+      if(tags.length){
+        for(const t of tags){
+          B().tagStyles[t] = {
+            template: n.style.template,
+            body: n.style.body,
+            cover: n.style.cover,
+            fontFamily: n.style.fontFamily,
+            fontSize: n.style.fontSize
+          };
+        }
+      }
+    }
+
+    syncUI();
     closeModal(styleModal);
   });
 
@@ -2260,6 +2737,7 @@
   $("#btnSave").addEventListener("click", ()=>{
     if(isReadOnly()) return guardEdit();
     saveLocal();
+    scheduleCloudSave(false);
     alert("ذخیره شد ✅");
   });
 
@@ -2277,7 +2755,6 @@
       app.data.boards[app.data.activeBoard] = st;
       cancelLinkMode();
       syncUI();
-      saveLocal();
     });
     fileImport.value = "";
   });
@@ -2292,15 +2769,9 @@
     importJSONFromFile(fileImportAll.files[0], (obj)=>{
       obj = migrateIfNeeded(obj);
       if(!obj || !obj.boards) throw new Error("invalid");
-      if(!obj.boards.main) obj.boards.main = makeBoard();
-      if(!obj.boards.team) obj.boards.team = makeBoard();
-      obj.boards.main = normalizeBoard(obj.boards.main);
-      obj.boards.team = normalizeBoard(obj.boards.team);
-      obj.activeBoard = obj.activeBoard || "main";
       app.data = obj;
       cancelLinkMode();
       syncUI();
-      saveLocal();
       closeDrawer();
       alert("ورود انجام شد ✅");
     });
@@ -2315,6 +2786,49 @@
   btnShareAll.addEventListener("click", async ()=>{
     const link = makeShareLink("all");
     await copyToClipboard(link);
+  });
+
+  // Online controls
+  btnJoinRoom.addEventListener("click", ()=>{
+    const rid = (roomInput.value||"").trim();
+    if(!rid) return alert("Room ID را وارد کن.");
+    // load local of that room first (اگر موجود است)
+    app.cloud.roomId = rid; // set for storageKey
+    const ok = loadLocal();
+    if(ok){ syncUI(true); }
+    connectRoom(rid);
+    closeDrawer();
+  });
+
+  btnCopyRoomLink.addEventListener("click", async ()=>{
+    const rid = (app.cloud.roomId || (roomInput.value||"").trim());
+    if(!rid) return alert("اول یک Room بساز/وارد شو.");
+    const url = new URL(location.href);
+    url.searchParams.set("room", rid);
+    url.searchParams.delete("share");
+    url.searchParams.delete("ro");
+    url.searchParams.delete("k");
+    await copyToClipboard(url.toString());
+  });
+
+  btnLeaveRoom.addEventListener("click", ()=>{
+    if(confirm("از Room خارج شوی؟ (اتصال آنلاین قطع می‌شود)")){
+      disconnectRoom();
+      closeDrawer();
+    }
+  });
+
+  // ---------- Modal backdrop behavior ----------
+  modalBackdrop.addEventListener("click", ()=>{
+    closeModal(linkCreateModal);
+    closeModal(linkManageModal);
+    closeModal(tagStylesModal);
+
+    if(styleModal.classList.contains("open")){
+      restoreStyleSnapshot();
+      closeModal(styleModal);
+    }
+    closeModal(trashModal);
   });
 
   // ---------- Viewport wheel zoom ----------
@@ -2387,6 +2901,7 @@
     const mdy = Math.abs(e.clientY - app.longpress.start.y);
     if(mdx + mdy > 6) cancelLongPress();
 
+    // pinch zoom
     if(app.pinch.active && app.pointers.size >= 2){
       cancelLongPress();
       const pts = [...app.pointers.values()].slice(0,2);
@@ -2397,49 +2912,45 @@
       return;
     }
 
-    if(app.drag.mode === "node_pending" && app.drag.pointerId === e.pointerId){
-      const dx = Math.abs(e.clientX - app.drag.startClient.x);
-      const dy = Math.abs(e.clientY - app.drag.startClient.y);
-      if(dx + dy >= 6){
-        cancelLongPress();
-        app.drag.mode = "node";
-        const el = nodesLayer.querySelector(`.node[data-id="${cssEscape(app.drag.nodeId)}"]`);
-        if(el){
-          el.classList.add("dragging");
-          app.drag.draggingClassApplied = true;
-        }
-      }else{
-        return;
-      }
-    }
+    // ✅ Node drag (easy + smooth, world-based)
+    if((app.drag.mode === "node_pending" || app.drag.mode === "node") && app.drag.pointerId === e.pointerId){
+      const dx = e.clientX - app.drag.startClient.x;
+      const dy = e.clientY - app.drag.startClient.y;
+      const dist = Math.abs(dx) + Math.abs(dy);
 
-    if(app.drag.mode === "node" && app.drag.pointerId === e.pointerId){
+      if(app.drag.mode === "node_pending"){
+        if(dist < 5) return;
+        app.drag.mode = "node";
+        cancelLongPress();
+        app.drag.draggingEl?.classList.add("dragging");
+      }
+
       cancelLongPress();
+
       const id = app.drag.nodeId;
       const n = B().nodes[id];
       if(!n) return;
 
-      const dx = (e.clientX - app.drag.startClient.x) / B().zoom;
-      const dy = (e.clientY - app.drag.startClient.y) / B().zoom;
-
-      if(!app.drag.didMutate && (Math.abs(dx)+Math.abs(dy) > 0.2)){
-        if(isReadOnly()) return; // در نمایش فقط drag برای جابجایی نود نداریم
+      if(!app.drag.didMutate){
+        if(isReadOnly()) return;
         pushHistory();
         app.drag.didMutate = true;
       }
-
       if(isReadOnly()) return;
 
-      n.x = clamp(app.drag.startNode.x + dx, 40, 9800);
-      n.y = clamp(app.drag.startNode.y + dy, 40, 9800);
+      const w = clientToWorld(e.clientX, e.clientY);
+      n.x = clamp(w.x - app.drag.grabOffset.x, 40, 9800);
+      n.y = clamp(w.y - app.drag.grabOffset.y, 40, 9800);
 
-      renderEdges();
-      const el = nodesLayer.querySelector(`.node[data-id="${cssEscape(id)}"]`);
+      // update element only
+      const el = app.drag.draggingEl || nodesLayer.querySelector(`.node[data-id="${cssEsc(id)}"]`);
       if(el){
         el.style.left = n.x + "px";
         el.style.top  = n.y + "px";
       }
+      renderEdges();
 
+      // drop target
       const target = findDropTarget(e.clientX, e.clientY, id);
       if(target !== app.drag.dropTargetId){
         app.drag.dropTargetId = target;
@@ -2448,6 +2959,7 @@
       return;
     }
 
+    // pan
     if(app.drag.mode === "pan" && app.drag.pointerId === e.pointerId){
       cancelLongPress();
       const dx = e.clientX - app.drag.startClient.x;
@@ -2466,35 +2978,34 @@
     if(app.pointers.size < 2) app.pinch.active = false;
 
     if(app.drag.pointerId === e.pointerId){
-      if(app.drag.mode === "node"){
+      if(app.drag.mode === "node" || app.drag.mode === "node_pending"){
         const draggedId = app.drag.nodeId;
         const targetId = app.drag.dropTargetId;
 
         if(!isReadOnly() && targetId){
-          if(!app.drag.didMutate){
-            pushHistory();
-            app.drag.didMutate = true;
-          }
           reparentNode(draggedId, targetId);
         }
 
-        if(!isReadOnly() && app.drag.didMutate) syncUI();
-        else { render(); if(!isReadOnly()) saveLocal(); }
-      }else if(app.drag.mode === "node_pending"){
-        render();
+        // پایان
+        app.drag.draggingEl?.classList.remove("dragging");
+        app.drag.draggingEl = null;
+
+        if(!isReadOnly() && app.drag.didMutate){
+          syncUI();
+        }else{
+          render();
+          if(!isReadOnly()){
+            saveLocal();
+            scheduleCloudSave(false);
+          }
+        }
       }
 
-      const nid = app.drag.nodeId;
-      if(nid && app.drag.draggingClassApplied){
-        const el = nodesLayer.querySelector(`.node[data-id="${cssEscape(nid)}"]`);
-        el?.classList.remove("dragging");
-      }
       app.drag.mode = null;
       app.drag.nodeId = null;
       app.drag.pointerId = null;
       app.drag.dropTargetId = null;
       app.drag.didMutate = false;
-      app.drag.draggingClassApplied = false;
     }
   });
 
@@ -2503,17 +3014,14 @@
     if(app.pointers.has(e.pointerId)) app.pointers.delete(e.pointerId);
     app.pinch.active = false;
 
-    const nid = app.drag.nodeId;
-    if(nid && app.drag.draggingClassApplied){
-      const el = nodesLayer.querySelector(`.node[data-id="${cssEscape(nid)}"]`);
-      el?.classList.remove("dragging");
-    }
+    app.drag.draggingEl?.classList.remove("dragging");
+    app.drag.draggingEl = null;
+
     app.drag.mode = null;
     app.drag.nodeId = null;
     app.drag.pointerId = null;
     app.drag.dropTargetId = null;
     app.drag.didMutate = false;
-    app.drag.draggingClassApplied = false;
   });
 
   viewport.addEventListener("contextmenu", (e)=>{
@@ -2552,7 +3060,12 @@
       if(drawer.classList.contains("open")) closeDrawer();
       if(linkCreateModal.classList.contains("open")) closeModal(linkCreateModal);
       if(linkManageModal.classList.contains("open")) closeModal(linkManageModal);
-      if(styleModal.classList.contains("open")) closeModal(styleModal);
+      if(tagStylesModal.classList.contains("open")) closeModal(tagStylesModal);
+
+      if(styleModal.classList.contains("open")){
+        restoreStyleSnapshot();
+        closeModal(styleModal);
+      }
       if(trashModal.classList.contains("open")) closeModal(trashModal);
       if(app.linker.active) cancelLinkMode();
       return;
@@ -2560,7 +3073,14 @@
 
     if(e.ctrlKey && (e.key === "z" || e.key === "Z")){ e.preventDefault(); undo(); return; }
     if(e.ctrlKey && (e.key === "y" || e.key === "Y")){ e.preventDefault(); redo(); return; }
-    if(e.ctrlKey && (e.key === "s" || e.key === "S")){ e.preventDefault(); if(isReadOnly()) return guardEdit(); saveLocal(); alert("ذخیره شد ✅"); return; }
+    if(e.ctrlKey && (e.key === "s" || e.key === "S")){
+      e.preventDefault();
+      if(isReadOnly()) return guardEdit();
+      saveLocal();
+      scheduleCloudSave(false);
+      alert("ذخیره شد ✅");
+      return;
+    }
 
     if(inEditable) return;
 
@@ -2588,7 +3108,6 @@
       else startLinkMode(id, app.linker.type || "work", app.linker.label || "");
       return;
     }
-
     if(e.key === "m" || e.key === "M"){ e.preventDefault(); openManageLinksModal(); return; }
 
     if(!id) return;
@@ -2626,10 +3145,48 @@
     }
   });
 
+  // ---------- Exit confirmation ----------
+  let exitGuardEnabled = true;
+  window.addEventListener("beforeunload", (e)=>{
+    if(!exitGuardEnabled) return;
+    e.preventDefault();
+    e.returnValue = "";
+    return "";
+  });
+
+  // Android back button guard
+  history.pushState({ mm_guard: true }, "", location.href);
+  window.addEventListener("popstate", ()=>{
+    if(!exitGuardEnabled) return;
+    const ok = confirm("آیا مطمئن هستید می‌خواهید خارج شوید؟");
+    if(ok){
+      exitGuardEnabled = false;
+      history.back();
+    }else{
+      history.pushState({ mm_guard: true }, "", location.href);
+    }
+  });
+
   // ---------- Boot ----------
   function boot(){
+    // Room param (online)
+    const url = new URL(location.href);
+    const roomFromUrl = (url.searchParams.get("room") || "").trim();
+    if(roomFromUrl){
+      app.cloud.roomId = roomFromUrl;
+      roomInput.value = roomFromUrl;
+      // load local for this room
+      const okLocal = loadLocal();
+      if(okLocal) syncUI(true);
+      connectRoom(roomFromUrl);
+    }else{
+      setOnlinePill("", "● آفلاین");
+    }
+
+    // Share link
     const loadedShare = tryLoadFromShareLink();
     if(!loadedShare){
+      // if no room and local not loaded -> seed
       const ok = loadLocal();
       if(!ok){
         app.data.activeBoard = "main";
@@ -2637,7 +3194,6 @@
         const a = createNode({ text:"کارها", parentId:r, x:1920, y:1200 });
         const t1 = createNode({ text:"تسک ۱", parentId:a, x:2240, y:1120 });
         const t2 = createNode({ text:"تسک ۲", parentId:a, x:2240, y:1240 });
-
         B().links.push({ id:newId(), fromId:t1, toId:t2, type:"work", label:"Team A", createdAt:now() });
         B().selectedId = r;
 
@@ -2660,16 +3216,36 @@
     const focusId = B().selectedId ?? B().roots[0];
     if(focusId) centerOnNode(focusId);
 
-    // بکاپ دوره‌ای (حتی اگر کاربر یادش رفت save بزنه)
-    setInterval(()=> {
-      if(!isReadOnly()) saveLocal();
+    // periodic save local + cloud (light)
+    setInterval(()=>{
+      if(!isReadOnly()){
+        saveLocal();
+        scheduleCloudSave(false);
+      }
     }, 12000);
-
-    window.addEventListener("beforeunload", ()=> { if(!isReadOnly()) saveLocal(); });
   }
 
   boot();
 })();
 </script>
+
+<!--
+✅ برای آنلاین واقعی (که هر تغییر همه ببینن و همه هم ویرایش کنن):
+1) یک Firebase project بساز.
+2) Firestore را فعال کن.
+3) Firestore Rules (ساده‌ترین حالت تستی):
+   rules_version = '2';
+   service cloud.firestore {
+     match /databases/{database}/documents {
+       match /mindrooms/{roomId} {
+         allow read, write: if true;
+       }
+     }
+   }
+   (بعداً برای امنیت، محدودیت بذار.)
+4) FIREBASE_CONFIG را در بالای فایل پر کن (apiKey, projectId, ...).
+5) سایت را روی یک هاست اجرا کن (Netlify / Vercel / GitHub Pages).
+6) یک Room بساز و لینک Room را برای بقیه بفرست.
+-->
 </body>
 </html>
